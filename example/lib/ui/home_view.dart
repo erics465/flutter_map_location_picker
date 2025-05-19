@@ -1,4 +1,4 @@
-import 'package:example/ui/location_picker_view.dart';
+import 'location_picker_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_location_picker/flutter_map_location_picker.dart';
 
