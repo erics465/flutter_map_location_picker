@@ -204,6 +204,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
+
     Widget searchBar() {
       return widget.searchBarEnabled
           ? Column(
@@ -229,7 +231,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                           Icons.search,
                           color: widget.indicatorColor,
                         ),
-                        fillColor: widget.backgroundColor ?? Colors.white,
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        fillColor: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHigh.withAlpha(200),
                         filled: true,
                         suffixIcon: (isFieldEmpty) ? null : IconButton(
                           icon: const Icon(Icons.clear),
@@ -248,6 +251,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                     ? ListView.builder(
                         itemBuilder: (context, index) {
                           return LocationItem(
+                            key: ValueKey(LatLng(_locationList[index].latitude, _locationList[index].longitude)),
                             data: _locationList[index],
                             backgroundColor: widget.backgroundColor,
                             locationNameTextStyle:
@@ -274,7 +278,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                     ? Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
-                        color: widget.backgroundColor ?? Colors.white,
+                        color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHigh,
                         child: Text(
                           "Location not found",
                           style: widget.searchTextStyle,
@@ -291,10 +295,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
           ? widget.customFooter!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null), _controller)
           : Container(
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-                color: widget.backgroundColor ?? Colors.white,
+                borderRadius: BorderRadius.zero,
+                color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHigh.withAlpha(200),
               ),
               padding: const EdgeInsets.all(10),
               child: Column(
@@ -322,25 +324,27 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               mainAxisSize: MainAxisSize.max,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Flexible(
                                   child: Text(_locationResult?.completeAddress ?? "-",
                                     style: widget.addressTextStyle ?? Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ),
-                                widget.customButton != null ? widget.customButton!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null))
-                                : ElevatedButton(
-                                  onPressed: () {
-                                    widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
-                                  },
-                                  style: ElevatedButton.styleFrom(backgroundColor: widget.buttonColor),
-                                  child: Text(widget.buttonText != null ? widget.buttonText! : "Select"),
-                                )
                               ]
                             ),
                           ],
                         )
-                      )
+                      ),
+                      widget.customButton != null ? widget.customButton!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null))
+                        : IconButton.filled(
+                          iconSize: 32,
+                          onPressed: () {
+                            widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: widget.buttonColor),
+                          icon: const Icon(Icons.check),
+                        ),
                     ],
                   ),
                 ],
@@ -368,11 +372,11 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                 },
                 style: TextButton.styleFrom(
                     backgroundColor: widget.sideButtonsColor ??
-                        Theme.of(context).primaryColor,
+                        theme.colorScheme.surfaceContainerHighest,
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(10)),
                 child: Icon(Icons.layers,
-                    color: widget.sideButtonsIconColor ?? Colors.white),
+                    color: widget.sideButtonsIconColor ?? theme.colorScheme.onSurface),
               ),
             ),
           ),
@@ -394,7 +398,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(10)),
                 child: Icon(Icons.zoom_in_map,
-                    color: widget.sideButtonsIconColor ?? Colors.white),
+                    color: widget.sideButtonsIconColor ?? theme.colorScheme.onSurface),
               ),
             ),
           ),
@@ -412,11 +416,11 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                 },
                 style: TextButton.styleFrom(
                     backgroundColor: widget.sideButtonsColor ??
-                        Theme.of(context).primaryColor,
+                        theme.colorScheme.surfaceContainerHighest,
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(10)),
                 child: Icon(Icons.zoom_out_map,
-                    color: widget.sideButtonsIconColor ?? Colors.white),
+                    color: widget.sideButtonsIconColor ?? theme.colorScheme.onSurface),
               ),
             ),
           ),
@@ -442,11 +446,11 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                 },
                 style: TextButton.styleFrom(
                     backgroundColor: widget.sideButtonsColor ??
-                        Theme.of(context).primaryColor,
+                        theme.colorScheme.surfaceContainerHighest,
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(10)),
                 child: Icon(Icons.my_location,
-                    color: widget.sideButtonsIconColor ?? Colors.white),
+                    color: widget.sideButtonsIconColor ?? theme.colorScheme.onSurface),
               ),
             ),
           ),
@@ -578,9 +582,11 @@ class _LocationItemState extends State<LocationItem> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
+
     if (_placemarks.isEmpty) {
       return Container(
-        color: widget.backgroundColor ?? Colors.white,
+        color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerLow,
         padding: const EdgeInsets.all(10),
         child: const Center(child: SizedBox(width: 20,height: 20,child: CircularProgressIndicator(),)),
       );
@@ -597,7 +603,7 @@ class _LocationItemState extends State<LocationItem> {
           ));
         },
         child: Container(
-          color: widget.backgroundColor ?? Colors.white,
+          color: widget.backgroundColor ?? theme.colorScheme.surfaceContainer,
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
