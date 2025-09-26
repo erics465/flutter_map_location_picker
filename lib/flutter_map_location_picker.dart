@@ -80,6 +80,10 @@ class MapLocationPicker extends StatefulWidget {
   final Widget Function(
       LocationResult locationResult, MapController mapController)? sideWidget;
   final GeocodingProvider? geocodingProvider;
+  final String? editLocationDialogTitle;
+  final String? editLocationDialogOkText;
+  final String? editLocationDialogCancelText;
+  final TileLayer? tileLayer;
 
   /// [onPicked] action on click select Location
   /// [initialLatitude] the latitude of the initial location
@@ -112,7 +116,12 @@ class MapLocationPicker extends StatefulWidget {
       this.sideButtonsIconColor,
       this.locationNameTextStyle,
       this.locale,
-      this.geocodingProvider});
+      this.geocodingProvider,
+      this.editLocationDialogTitle,
+      this.editLocationDialogCancelText,
+      this.editLocationDialogOkText,
+      this.tileLayer
+    });
 
   @override
   State<MapLocationPicker> createState() => _MapLocationPickerState();
@@ -209,6 +218,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     Widget searchBar() {
       return widget.searchBarEnabled
           ? Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 TextField(
                   style: widget.searchTextStyle,
@@ -248,11 +259,15 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                   
                 ),
                 _locationList.isNotEmpty
-                    ? ListView.builder(
-                        itemBuilder: (context, index) {
-                          return LocationItem(
-                            key: ValueKey(LatLng(_locationList[index].latitude, _locationList[index].longitude)),
-                            data: _locationList[index],
+                    ? SizedBox(
+                      height: 200,
+                      child: ListView(
+                      padding: EdgeInsets.only(top: 0.0),
+                        children: [
+                          for (Location location in _locationList)
+                           LocationItem(
+                            key: ValueKey(LatLng(location.latitude, location.longitude)),
+                            data: location,
                             backgroundColor: widget.backgroundColor,
                             locationNameTextStyle:
                                 widget.locationNameTextStyle,
@@ -267,12 +282,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                                 _locationList.clear();
                               });
                             },
-                          );
-                        },
-                        itemCount: _locationList.length,
-                        shrinkWrap: true,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                      )
+                          )
+                        ]
+                      ))
                     : Container(),
                 _error
                     ? Container(
@@ -315,11 +327,43 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              _locationResult?.locationName ??
-                                  "Location not found",
-                              style: widget.locationNameTextStyle ??
-                                  Theme.of(context).textTheme.titleMedium,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.max,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(child: Text(
+                                  _locationResult?.locationName ??
+                                      "Location not found",
+                                  style: widget.locationNameTextStyle ??
+                                      Theme.of(context).textTheme.titleMedium,
+                                )),
+                                IconButton(
+                                  iconSize: 14,
+                                  onPressed: () async {
+                                    String? result = await EditTextDialog.show(
+                                      context,
+                                      _locationResult?.locationName ?? "",
+                                      widget.editLocationDialogTitle ?? "Edit name",
+                                      widget.editLocationDialogCancelText ?? "Cancel",
+                                      widget.editLocationDialogOkText ?? "Ok"
+                                    );
+
+                                    if (result != null) {
+                                      if (_locationResult == null) {
+                                        _locationResult = LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: "", placemark: Placemark(name: ""), locationName: result);
+                                      } else {
+                                        _locationResult?.locationName = result;
+                                      }
+
+                                      if (mounted && context.mounted) {
+                                        setState(() {});
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.edit),
+                                ),
+                              ],
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -485,7 +529,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         },
       ),
       children: [
-        TileLayer(
+        widget.tileLayer ?? TileLayer(
           urlTemplate: _mapType == MapType.normal
               ? "http://tile.openstreetmap.org/{z}/{x}/{y}.png"
               : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg',
@@ -591,49 +635,48 @@ class _LocationItemState extends State<LocationItem> {
         child: const Center(child: SizedBox(width: 20,height: 20,child: CircularProgressIndicator(),)),
       );
     }
-    return ListView.builder(itemBuilder: (context,index){
-      return GestureDetector(
-        onTap: () {
-          widget.onResultClicked(LocationResult(
-            latitude: widget.data.latitude,
-            longitude: widget.data.longitude,
-            completeAddress: getCompleteAdress(placemark: _placemarks[index]),
-            placemark: _placemarks[index],
-            locationName: getLocationName(placemark: _placemarks[index])
-          ));
-        },
-        child: Container(
-          color: widget.backgroundColor ?? theme.colorScheme.surfaceContainer,
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              Icon(
-                Icons.location_on_rounded,
-                color: widget.indicatorColor,
-              ),
-              const SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        getLocationName(placemark: _placemarks[index]),
-                        style: widget.locationNameTextStyle ??
-                            Theme.of(context).textTheme.titleMedium,
-                      ),              Text(
-                        getCompleteAdress(placemark: _placemarks[index]),
-                        style: widget.addressTextStyle ??
-                            Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ))
-            ],
-          ),
+    return Container(
+        color: widget.backgroundColor ?? theme.colorScheme.surfaceContainer,
+        padding: const EdgeInsets.all(10),
+        margin: EdgeInsets.zero,
+        child: GestureDetector(
+      onTap: () {
+        widget.onResultClicked(LocationResult(
+          latitude: widget.data.latitude,
+          longitude: widget.data.longitude,
+          completeAddress: getCompleteAdress(placemark: _placemarks[0]),
+          placemark: _placemarks[0],
+          locationName: getLocationName(placemark: _placemarks[0])
+        ));
+      },
+      child: Row(
+          children: [
+            Icon(
+              Icons.location_on_rounded,
+              color: widget.indicatorColor,
+            ),
+            const SizedBox(
+              width: 10,
+            ),
+            Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      getLocationName(placemark: _placemarks[0]),
+                      style: widget.locationNameTextStyle ??
+                          Theme.of(context).textTheme.titleMedium,
+                    ),              Text(
+                      getCompleteAdress(placemark: _placemarks[0]),
+                      style: widget.addressTextStyle ??
+                          Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ))
+          ],
         ),
-      );
-    },itemCount: _placemarks.length > 3 ? 3 : _placemarks.length, shrinkWrap: true,physics: const NeverScrollableScrollPhysics(),);
+      ),
+    );
   }
 }
 
@@ -719,3 +762,42 @@ bool isStreetCode(String text) {
   return streetCodeRegex.hasMatch(text);
 }
 
+// Main widget to trigger the dialog
+class EditTextDialog {
+  static Future<String?> show(BuildContext context, String text, String title, String cancelText, String okText) {
+    TextEditingController inputController = TextEditingController(text: text);
+    bool empty = inputController.text.isEmpty;
+
+    return showDialog<String?>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: inputController,
+                  onChanged: (value) {
+                    setState(() => empty = value.isEmpty);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: Text(cancelText),
+                onPressed: () => Navigator.pop(context),
+              ),
+              FilledButton(
+                onPressed: (!empty) ? () {Navigator.pop(context, inputController.text);} : null,
+                child: Text(okText),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
