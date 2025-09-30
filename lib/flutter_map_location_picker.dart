@@ -130,6 +130,7 @@ class MapLocationPicker extends StatefulWidget {
 class _MapLocationPickerState extends State<MapLocationPicker> {
   bool _error = false;
   bool _move = false;
+  bool _locked = false;
   bool popupHidden = true;
   Timer? _timer;
   final MapController _controller = MapController();
@@ -383,11 +384,15 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                       widget.customButton != null ? widget.customButton!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null))
                         : IconButton.filled(
                           iconSize: 32,
+                          selectedIcon: Icon(Icons.check),
+                          isSelected: !_locked,
                           onPressed: () {
+                            _locked = !_locked;
+                            setState(() {});
                             widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
                           },
-                          style: ElevatedButton.styleFrom(backgroundColor: widget.buttonColor),
-                          icon: const Icon(Icons.check),
+                          style: !_locked ? ElevatedButton.styleFrom(backgroundColor: widget.buttonColor) : null,
+                          icon: const Icon(Icons.delete_outline),
                         ),
                     ],
                   ),
@@ -516,9 +521,11 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
             _timer?.cancel();
             if (!_move) {
               _timer = Timer(const Duration(milliseconds: 200), () {
-                _latitude = evt.camera.center.latitude;
-                _longitude = evt.camera.center.longitude;
-                _getLocationResult();
+                if (!_locked) {
+                  _latitude = evt.camera.center.latitude;
+                  _longitude = evt.camera.center.longitude;
+                  _getLocationResult();
+                }
               });
             } else {
               _move = false;
@@ -533,7 +540,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
           urlTemplate: _mapType == MapType.normal
               ? "http://tile.openstreetmap.org/{z}/{x}/{y}.png"
               : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg',
-          userAgentPackageName: 'com.groupya.app',
+          userAgentPackageName: 'app.groupya.flutter_app',
         ),
         Stack(
           children: [
