@@ -37,8 +37,8 @@ class LocationResult {
   LocationResult(
       {required this.latitude,
       required this.longitude,
-      required this.completeAddress,
-      required this.placemark, required this.locationName});
+      this.completeAddress,
+      this.placemark, this.locationName});
 }
 
 class MapLocationPicker extends StatefulWidget {
@@ -47,6 +47,9 @@ class MapLocationPicker extends StatefulWidget {
 
   /// The initial latitude
   final double? initialLatitude;
+
+  /// Pre-set name
+  final String? initialLocationName;
 
   /// callback when location is picked
   final Function(LocationResult onPicked) onPicked;
@@ -93,6 +96,7 @@ class MapLocationPicker extends StatefulWidget {
       required this.initialLatitude,
       required this.initialLongitude,
       required this.onPicked,
+      this.initialLocationName,
       this.backgroundColor,
       this.indicatorColor,
       this.addressTextStyle,
@@ -152,11 +156,21 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     _latitude = widget.initialLatitude ?? -6.984072660841485;
     _longitude = widget.initialLongitude ?? 110.40950678599624;
 
+    //Set existing location if available
+    if (widget.initialLocationName != null) {
+      _locationResult = LocationResult(
+        latitude: _latitude,
+        longitude: _longitude, 
+        locationName: widget.initialLocationName
+      );
+      _locked = true;
+    } else {
+      _setupInitalLocation();
+    }
+
     if (widget.mapType != null) {
       _mapType = widget.mapType!;
     }
-    _setupInitalLocation();
-
   }
 
   _setupInitalLocation() async{
@@ -542,9 +556,25 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
               : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg',
           userAgentPackageName: 'app.groupya.flutter_app',
         ),
+        if (_locked)
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: LatLng(_latitude, _longitude),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  size: 60,
+                  color: widget.indicatorColor != null
+                      ? widget.indicatorColor!
+                      : Theme.of(context).colorScheme.primary,
+                ),
+              )
+            ]
+          ),
         Stack(
           children: [
-            Center(
+            if (!_locked)
+              Center(
                 child: widget.centerWidget != null
                     ? widget.centerWidget!
                     : Icon(
