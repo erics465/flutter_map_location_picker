@@ -558,11 +558,15 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         ),
         if (_locked)
           MarkerLayer(
+            alignment: Alignment.topCenter,
             markers: [
               Marker(
                 point: LatLng(_latitude, _longitude),
+                height: 60,
+                width: 60,
+                alignment: Alignment.topCenter,
                 child: Icon(
-                  Icons.location_on_rounded,
+                  Icons.location_on,
                   size: 60,
                   color: widget.indicatorColor != null
                       ? widget.indicatorColor!
@@ -575,15 +579,16 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
           children: [
             if (!_locked)
               Center(
-                child: widget.centerWidget != null
-                    ? widget.centerWidget!
-                    : Icon(
-                  Icons.location_on_rounded,
-                  size: 60,
-                  color: widget.indicatorColor != null
-                      ? widget.indicatorColor!
-                      : Theme.of(context).colorScheme.primary,
-                )),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 60),
+                  child: Icon(
+                    Icons.location_on_outlined,
+                    size: 60,
+                    weight: 2,
+                    color: widget.indicatorColor != null  ? widget.indicatorColor! : Theme.of(context).colorScheme.primary,
+                  )
+                ),
+              ),
             Positioned(top: 10, left: 10, right: 10, child: searchBar()),
             Positioned(
                 bottom: 0,
