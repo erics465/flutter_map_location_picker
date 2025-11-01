@@ -86,6 +86,9 @@ class MapLocationPicker extends StatefulWidget {
   final String? editLocationDialogTitle;
   final String? editLocationDialogOkText;
   final String? editLocationDialogCancelText;
+  final String? editLocationButtonText;
+  final String? setLocationButtonText;
+  final String? unpinLocationButtonText;
   final TileLayer? tileLayer;
 
   /// [onPicked] action on click select Location
@@ -124,6 +127,9 @@ class MapLocationPicker extends StatefulWidget {
       this.editLocationDialogTitle,
       this.editLocationDialogCancelText,
       this.editLocationDialogOkText,
+      this.setLocationButtonText,
+      this.editLocationButtonText,
+      this.unpinLocationButtonText,
       this.tileLayer
     });
 
@@ -147,14 +153,15 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
 
   LocationResult? _locationResult;
 
-  double _latitude = -6.984072660841485;
-  double _longitude = 110.40950678599624;
+  late double _latitude;
+  late double _longitude;
 
   @override
   void initState() {
     super.initState();
-    _latitude = widget.initialLatitude ?? -6.984072660841485;
-    _longitude = widget.initialLongitude ?? 110.40950678599624;
+    //Set to values or center of Germany
+    _latitude = widget.initialLatitude ?? 10.26517;
+    _longitude = widget.initialLongitude ?? 51.9481;
 
     //Set existing location if available
     if (widget.initialLocationName != null) {
@@ -319,100 +326,76 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
 
     Widget viewLocationName() {
       return widget.customFooter != null
-          ? widget.customFooter!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null), _controller)
-          : Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.zero,
-                color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHigh.withAlpha(200),
+        ? widget.customFooter!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null), _controller)
+        : Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.zero,
+            color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHigh.withAlpha(200),
+          ),
+          padding: const EdgeInsets.all(6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _locationResult?.locationName ??
+                    "Location not found",
+                style: widget.locationNameTextStyle ??
+                    Theme.of(context).textTheme.bodyLarge,
               ),
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
+              widget.customButton != null ? widget.customButton!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null))
+                : SizedBox(
+                  width: double.infinity,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    spacing: 12,
                     children: [
-                      widget.leadingIcon ??
-                          Icon(
-                            Icons.location_city,
-                            color: widget.indicatorColor,
-                          ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(child: Text(
-                                  _locationResult?.locationName ??
-                                      "Location not found",
-                                  style: widget.locationNameTextStyle ??
-                                      Theme.of(context).textTheme.titleMedium,
-                                )),
-                                IconButton(
-                                  iconSize: 14,
-                                  onPressed: () async {
-                                    String? result = await EditTextDialog.show(
-                                      context,
-                                      _locationResult?.locationName ?? "",
-                                      widget.editLocationDialogTitle ?? "Edit name",
-                                      widget.editLocationDialogCancelText ?? "Cancel",
-                                      widget.editLocationDialogOkText ?? "Ok"
-                                    );
+                      TextButton.icon(
+                        onPressed: () async {
+                          String? result = await EditTextDialog.show(
+                            context,
+                            _locationResult?.locationName ?? "",
+                            widget.editLocationDialogTitle ?? "Edit name",
+                            widget.editLocationDialogCancelText ?? "Cancel",
+                            widget.editLocationDialogOkText ?? "Ok"
+                          );
 
-                                    if (result != null) {
-                                      if (_locationResult == null) {
-                                        _locationResult = LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: "", placemark: Placemark(name: ""), locationName: result);
-                                      } else {
-                                        _locationResult?.locationName = result;
-                                      }
+                          if (result != null && result != _locationResult?.locationName) {
+                            if (_locationResult == null) {
+                              _locationResult = LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: "", placemark: Placemark(name: ""), locationName: result);
+                            } else {
+                              _locationResult!.locationName = result;
+                            }
 
-                                      if (mounted && context.mounted) {
-                                        setState(() {});
-                                      }
-                                    }
-                                  },
-                                  icon: const Icon(Icons.edit),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: Text(_locationResult?.completeAddress ?? "-",
-                                    style: widget.addressTextStyle ?? Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ),
-                              ]
-                            ),
-                          ],
-                        )
+                            widget.onPicked(_locationResult!);
+
+                            if (mounted && context.mounted) {
+                              setState(() {});
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: Text(widget.editLocationButtonText ?? "Edit")
                       ),
-                      widget.customButton != null ? widget.customButton!(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null))
-                        : IconButton.filled(
-                          iconSize: 32,
-                          selectedIcon: Icon(Icons.check),
-                          isSelected: !_locked,
-                          onPressed: () {
-                            _locked = !_locked;
-                            setState(() {});
-                            widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
-                          },
-                          style: !_locked ? ElevatedButton.styleFrom(backgroundColor: widget.buttonColor) : null,
-                          icon: const Icon(Icons.delete_outline),
-                        ),
-                    ],
+
+                      FilledButton.icon(
+                        onPressed: () {
+                          _locked = !_locked;
+                          setState(() {});
+                          widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
+                        },
+                        style: !_locked ? ElevatedButton.styleFrom(backgroundColor: widget.buttonColor) : null,
+                        icon: _locked ? const Icon(Icons.delete_outline) : const Icon(Icons.check),
+                        label: Text(_locked ? (widget.unpinLocationButtonText ?? "Discard") : (widget.setLocationButtonText ?? "Set"))
+                      ),
+                    ]
                   ),
-                ],
-              ),
-            );
+                ),
+            ],
+          ),
+        );
     }
 
     Widget sideButton() {
@@ -599,12 +582,12 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.only(right: 8),
                         child: sideButton(),
                       ),
                     ),
                     const SizedBox(
-                      height: 10,
+                      height: 8,
                     ),
                     if (!popupHidden)
                       viewLocationName(),
@@ -701,20 +684,11 @@ class _LocationItemState extends State<LocationItem> {
               width: 10,
             ),
             Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      getLocationName(placemark: _placemarks[0]),
-                      style: widget.locationNameTextStyle ??
-                          Theme.of(context).textTheme.titleMedium,
-                    ),              Text(
-                      getCompleteAdress(placemark: _placemarks[0]),
-                      style: widget.addressTextStyle ??
-                          Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ))
+              child: Text(
+                getLocationName(placemark: _placemarks[0]),
+                style: widget.locationNameTextStyle ?? Theme.of(context).textTheme.bodyLarge,
+              ),
+            )
           ],
         ),
       ),
@@ -756,43 +730,34 @@ Future<LocationResult> getLocationResult({required double latitude, required dou
 }
 
 String getLocationName({required Placemark placemark}) {
-  /// Returns throughfare or subLocality if name is an unreadable street code
-  if(isStreetCode(placemark.name ?? "")) {
-    if((placemark.thoroughfare ?? "").isEmpty){
-      return placemark.subLocality ?? "-";
-    } else{
-      return placemark.thoroughfare ?? "=";
-    }
-  }
+  print(placemark.toJson());
 
   /// Returns name if it is same with street
-  else if(placemark.name == placemark.street){
-    return placemark.name ?? "-";
+  if (placemark.name == placemark.street || placemark.street?.toLowerCase().contains(placemark.name?.toLowerCase() ?? "") == true) {
+    return getCompleteAdress(placemark: placemark);
+  } else {
+    String completeAddress = getCompleteAdress(placemark: placemark, locationName: placemark.name ?? "");
+    return "${placemark.name ?? "-"}${completeAddress.isNotEmpty ? " (${completeAddress})" : ""}";
   }
-
-  /// Returns street if name is part of name (like house number)
-  else if(placemark.street?.toLowerCase().contains(placemark.name?.toLowerCase() ?? "") == true){
-    return placemark.street ?? "-";
-  }
-  return placemark.name ?? "-";
-
 }
 
-String getCompleteAdress({required Placemark placemark}) {
+String getCompleteAdress({required Placemark placemark, String locationName = ""}) {
   List<String> parts = [];
-  if (placemark.thoroughfare != null) {
+  if ((placemark.thoroughfare ?? "").isNotEmpty && !locationName.contains(placemark.thoroughfare!)) {
     parts.add(placemark.thoroughfare!);
-  } else if (placemark.street != null) {
+
+    if ((placemark.subThoroughfare ?? "").isNotEmpty) {
+      parts[parts.length-1] = "${parts[parts.length-1]} ${placemark.subThoroughfare}";
+    }
+  } else if ((placemark.street ?? "").isNotEmpty && !locationName.contains(placemark.street!)) {
     parts.add(placemark.street!);
   }
-  if (placemark.subAdministrativeArea != null) {
-    parts.add(placemark.subAdministrativeArea!);
+
+  if ((placemark.subLocality ?? "").isNotEmpty && !locationName.contains(placemark.subLocality!)) {
+    parts.add(placemark.subLocality!);
   }
-  if (placemark.administrativeArea != null) {
-    parts.add(placemark.administrativeArea!);
-  }
-  if (placemark.country != null) {
-    parts.add(placemark.country!);
+  if ((placemark.locality ?? "").isNotEmpty && !locationName.contains(placemark.locality!)) {
+    parts.add(placemark.locality!);
   }
 
   return parts.join(", ");
