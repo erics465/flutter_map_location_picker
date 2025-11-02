@@ -513,6 +513,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         initialCenter: LatLng(_latitude, _longitude),
         initialZoom: 16,
         maxZoom: 18,
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag | InteractiveFlag.scrollWheelZoom
+        ),
         onMapReady: () {
           _controller.mapEventStream.listen((evt) async {
             _timer?.cancel();
