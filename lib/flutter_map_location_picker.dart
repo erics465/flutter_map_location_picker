@@ -76,6 +76,7 @@ class MapLocationPicker extends StatefulWidget {
   final bool zoomButtonEnabled;
   final bool searchBarEnabled;
   final bool switchMapTypeEnabled;
+  final bool immediateSetMode;
   final MapType? mapType;
   final Widget Function(LocationResult locationResult)? customButton;
   final Widget Function(
@@ -130,7 +131,8 @@ class MapLocationPicker extends StatefulWidget {
       this.setLocationButtonText,
       this.editLocationButtonText,
       this.unpinLocationButtonText,
-      this.tileLayer
+      this.tileLayer,
+      this.immediateSetMode = false
     });
 
   @override
@@ -302,6 +304,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                                 _controller.move(LatLng(_latitude, _longitude), 16);
                                 _locationResult = result;
                                 _locationList.clear();
+                                widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
                               });
                             },
                           )
@@ -380,16 +383,17 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                         label: Text(widget.editLocationButtonText ?? "Edit")
                       ),
 
-                      FilledButton.icon(
-                        onPressed: () {
-                          _locked = !_locked;
-                          setState(() {});
-                          widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
-                        },
-                        style: !_locked ? ElevatedButton.styleFrom(backgroundColor: widget.buttonColor) : null,
-                        icon: _locked ? const Icon(Icons.delete_outline) : const Icon(Icons.check),
-                        label: Text(_locked ? (widget.unpinLocationButtonText ?? "Discard") : (widget.setLocationButtonText ?? "Set"))
-                      ),
+                      if (!widget.immediateSetMode)
+                        FilledButton.icon(
+                          onPressed: () {
+                            _locked = !_locked;
+                            setState(() {});
+                            widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
+                          },
+                          style: !_locked ? ElevatedButton.styleFrom(backgroundColor: widget.buttonColor) : null,
+                          icon: _locked ? const Icon(Icons.delete_outline) : const Icon(Icons.check),
+                          label: Text(_locked ? (widget.unpinLocationButtonText ?? "Discard") : (widget.setLocationButtonText ?? "Set"))
+                        ),
                     ]
                   ),
                 ),
