@@ -68,6 +68,7 @@ class MapLocationPicker extends StatefulWidget {
   final TextStyle? buttonTextStyle;
   final Widget? centerWidget;
   final double? initialZoom;
+  final double? minZoom;
   final Color? buttonColor;
   final String? buttonText;
   final Widget? leadingIcon;
@@ -132,7 +133,8 @@ class MapLocationPicker extends StatefulWidget {
       this.editLocationButtonText,
       this.unpinLocationButtonText,
       this.tileLayer,
-      this.immediateSetMode = false
+      this.immediateSetMode = false,
+      this.minZoom
     });
 
   @override
@@ -303,6 +305,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                                 _move = true;
                                 _controller.move(LatLng(_latitude, _longitude), 16);
                                 _locationResult = result;
+                                _locked = true;
                                 _locationList.clear();
                                 widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
                               });
@@ -516,7 +519,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       options: MapOptions(
         initialCenter: LatLng(_latitude, _longitude),
         initialZoom: 16,
-        maxZoom: 18,
+        maxZoom: 20,
+        minZoom: widget.minZoom,
         interactionOptions: InteractionOptions(
           flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag | InteractiveFlag.scrollWheelZoom
         ),
