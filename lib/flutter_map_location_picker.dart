@@ -309,6 +309,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                                 _locationList.clear();
                                 widget.onPicked(_locationResult ?? LocationResult(latitude: _latitude, longitude: _longitude, completeAddress: null, placemark: null,locationName: null));
                               });
+
+                              FocusManager.instance.primaryFocus?.unfocus();
                             },
                           )
                         ]
