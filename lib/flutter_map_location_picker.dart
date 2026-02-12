@@ -8,6 +8,8 @@ import 'package:flutter_map_location_picker/location_with_placemark.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'flutter_map_location_picker_controller.dart';
+
 typedef GeocodingProvider = Future<List<Location>> Function(String address);
 
 /// Change the Map Tiles for OSM
@@ -42,6 +44,8 @@ class LocationResult {
 }
 
 class MapLocationPicker extends StatefulWidget {
+  final MapLocationPickerController? controller;
+
   /// The initial longitude
   final double? initialLongitude;
 
@@ -50,6 +54,9 @@ class MapLocationPicker extends StatefulWidget {
 
   /// Pre-set name
   final String? initialLocationName;
+
+  /// Initial search bar content
+  final String? initialLocationSearchTerm;
 
   /// callback when location is picked
   final Function(LocationResult onPicked) onPicked;
@@ -101,7 +108,9 @@ class MapLocationPicker extends StatefulWidget {
       required this.initialLatitude,
       required this.initialLongitude,
       required this.onPicked,
+      this.controller,
       this.initialLocationName,
+      this.initialLocationSearchTerm,
       this.backgroundColor,
       this.indicatorColor,
       this.addressTextStyle,
@@ -138,10 +147,10 @@ class MapLocationPicker extends StatefulWidget {
     });
 
   @override
-  State<MapLocationPicker> createState() => _MapLocationPickerState();
+  State<MapLocationPicker> createState() => MapLocationPickerState();
 }
 
-class _MapLocationPickerState extends State<MapLocationPicker> {
+class MapLocationPickerState extends State<MapLocationPicker> {
   bool _error = false;
   bool _move = false;
   bool _locked = false;
@@ -179,9 +188,21 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       _setupInitalLocation();
     }
 
+    if (widget.initialLocationSearchTerm != null && widget.initialLocationSearchTerm!.isNotEmpty) {
+      searchFieldController.text = widget.initialLocationSearchTerm!;
+    }
+
     if (widget.mapType != null) {
       _mapType = widget.mapType!;
     }
+
+    widget.controller?.registerState(this);
+  }
+
+    @override
+  void dispose() {
+    super.dispose();
+    widget.controller?.dispose();
   }
 
   _setupInitalLocation() async{
@@ -189,13 +210,18 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       await setLocaleIdentifier(widget.locale!);
 
     }
-    _locationResult = LocationResult(
-        latitude: _latitude,
-        longitude: _longitude,
-        completeAddress: null,
-        locationName: null,
-        placemark: null);
-    _getLocationResult();
+
+    if (widget.initialLocationSearchTerm != null && widget.initialLocationSearchTerm!.isNotEmpty) {
+      _autocompleteSearch(widget.initialLocationSearchTerm!);
+    } else {
+      _locationResult = LocationResult(
+          latitude: _latitude,
+          longitude: _longitude,
+          completeAddress: null,
+          locationName: null,
+          placemark: null);
+      _getLocationResult();
+    }
   }
 
   _getLocationResult({Placemark? placemark}) async {
@@ -234,6 +260,13 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       _locationList.clear();
       _error = false;
       setState(() {});
+    }
+  }
+
+  Future<void> triggerAutocompleteSearch(String query) async {
+    if (mounted && context.mounted) {
+      searchFieldController.text = query;
+      _autocompleteSearch(query);
     }
   }
 
@@ -743,8 +776,6 @@ Future<LocationResult> getLocationResult({required double latitude, required dou
 }
 
 String getLocationName({required Placemark placemark}) {
-  print(placemark.toJson());
-
   /// Returns name if it is same with street
   if (placemark.name == placemark.street || placemark.street?.toLowerCase().contains(placemark.name?.toLowerCase() ?? "") == true) {
     return getCompleteAdress(placemark: placemark);
